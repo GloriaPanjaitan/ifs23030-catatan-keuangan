@@ -20,7 +20,7 @@ class FinancialRecordLivewire extends Component
     public $balance = 0;
 
     // Properti untuk Edit/Update/Delete
-    public $recordId;
+    public $recordId; // Menyimpan ID catatan yang sedang di-edit/delete
     public $editAmount;
     public $editType;
     public $editDescription;
