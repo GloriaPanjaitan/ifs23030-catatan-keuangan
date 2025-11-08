@@ -71,13 +71,16 @@
     {{-- 2. LIVEWIRE SCRIPTS --}}
     @livewireScripts
 
-    {{-- 3. SCRIPT KONEKTOR LIVEWIRE/BOOTSTRAP --}}
+    {{-- 3. SCRIPT KONEKTOR LIVEWIRE/BOOTSTRAP (PERBAIKAN DIBUAT DI SINI) --}}
     <script>
+        // Deklarasikan variabel Bootstrap secara eksplisit untuk penggunaan yang aman
+        const BATCH_BOOTSTRAP = window.bootstrap; 
+        
         document.addEventListener("livewire:initialized", () => {
             Livewire.on("closeModal", (data) => {
-                if (data && data.id) {
-                    // Pastikan bootstrap.Modal.getInstance() berjalan
-                    const modal = bootstrap.Modal.getInstance(
+                // Gunakan BATCH_BOOTSTRAP, dan pastikan data.id ada
+                if (data && data.id && BATCH_BOOTSTRAP) {
+                    const modal = BATCH_BOOTSTRAP.Modal.getInstance(
                         document.getElementById(data.id)
                     );
                     if (modal) modal.hide();
@@ -85,9 +88,9 @@
             });
 
             Livewire.on("showModal", (data) => {
-                if (data && data.id) {
-                    // Pastikan bootstrap.Modal.getOrCreateInstance() berjalan
-                    const modal = bootstrap.Modal.getOrCreateInstance(
+                // Gunakan BATCH_BOOTSTRAP, dan pastikan data.id ada
+                if (data && data.id && BATCH_BOOTSTRAP) {
+                    const modal = BATCH_BOOTSTRAP.Modal.getOrCreateInstance(
                         document.getElementById(data.id)
                     );
                     if (modal) modal.show();

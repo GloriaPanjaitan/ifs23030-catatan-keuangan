@@ -8,19 +8,16 @@ use Illuminate\Support\Facades\Auth;
 
 class FinancialRecordLivewire extends Component
 {
-    // Properti untuk Input Form Create
     public $amount;
     public $type = 'expense';
     public $description;
 
-    // Properti untuk Data dan Ringkasan
     public $financialRecords;
     public $totalIncome = 0;
     public $totalExpense = 0;
     public $balance = 0;
 
-    // Properti untuk Edit/Update/Delete
-    public $recordId; // Menyimpan ID catatan yang sedang di-edit/delete
+    public $recordId; 
     public $editAmount;
     public $editType;
     public $editDescription;
@@ -46,7 +43,6 @@ class FinancialRecordLivewire extends Component
         $this->balance = $this->totalIncome - $this->totalExpense;
     }
 
-    // CREATE
     public function addRecord()
     {
         $this->validate([
@@ -67,7 +63,7 @@ class FinancialRecordLivewire extends Component
         session()->flash('message', 'Catatan keuangan berhasil ditambahkan!');
     }
 
-    // READ (Mengisi data form edit)
+    // Perbaikan: dispatch menggunakan named arguments
     public function edit($recordId)
     {
         $record = FinancialRecord::find($recordId);
@@ -81,10 +77,9 @@ class FinancialRecordLivewire extends Component
         $this->editType = $record->type;
         $this->editDescription = $record->description;
         
-        $this->dispatch('showModal', ['id' => 'editRecordModal']);
+        $this->dispatch('showModal', id: 'editRecordModal'); 
     }
 
-    // UPDATE (Menyimpan perubahan)
     public function updateRecord()
     {
         $this->validate([
@@ -107,19 +102,19 @@ class FinancialRecordLivewire extends Component
         ]);
         
         $this->loadRecords();
-        $this->dispatch('closeModal', ['id' => 'editRecordModal']);
+        $this->dispatch('closeModal', id: 'editRecordModal'); // Perbaikan: dispatch menggunakan named arguments
         session()->flash('message', 'Catatan keuangan berhasil diperbarui!');
         $this->reset(['recordId', 'editAmount', 'editType', 'editDescription']);
     }
 
-    // DELETE (Mengambil ID untuk konfirmasi)
+    // Perbaikan: dispatch menggunakan named arguments
     public function delete($recordId)
     {
         $this->recordId = $recordId;
-        $this->dispatch('showModal', ['id' => 'deleteRecordModal']);
+        $this->dispatch('showModal', id: 'deleteRecordModal'); 
     }
 
-    // DELETE (Menghapus data)
+    // Perbaikan: dispatch menggunakan named arguments
     public function deleteRecord()
     {
         $record = FinancialRecord::find($this->recordId);
@@ -131,7 +126,7 @@ class FinancialRecordLivewire extends Component
             session()->flash('error', 'Catatan tidak ditemukan atau bukan milik Anda.');
         }
 
-        $this->dispatch('closeModal', ['id' => 'deleteRecordModal']);
+        $this->dispatch('closeModal', id: 'deleteRecordModal');
         $this->loadRecords();
         $this->reset(['recordId']);
     }
