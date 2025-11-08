@@ -15,6 +15,7 @@
 
     {{-- Styles --}}
     @livewireStyles
+    {{-- PASTIKAN LINK CSS BOOTSTRAP INI BENAR --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
@@ -25,14 +26,14 @@
     {{-- ========================================================= --}}
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            {{-- BRAND/LOGO - HARUS MENGGUNAKAN route('app.home') --}}
+            {{-- BRAND/LOGO --}}
             <a class="navbar-brand" href="{{ route('app.home') }}">Catatan Keuangan App</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    {{-- Link Utama (Menggunakan app.home) --}}
+                    {{-- Link Utama --}}
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('app.home') ? 'active' : '' }}" href="{{ route('app.home') }}">
                             Catatan Keuangan
@@ -63,16 +64,19 @@
     </div>
 
     {{-- ========================================================= --}}
-    {{-- SCRIPTS --}}
+    {{-- SCRIPTS (PASTIKAN URUTAN INI) --}}
     {{-- ========================================================= --}}
+    {{-- 1. FILE BOOTSTRAP (WAJIB ADA) --}}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {{-- 2. LIVEWIRE SCRIPTS --}}
     @livewireScripts
 
-    {{-- Script tambahan untuk Livewire modal --}}
+    {{-- 3. SCRIPT KONEKTOR LIVEWIRE/BOOTSTRAP --}}
     <script>
         document.addEventListener("livewire:initialized", () => {
             Livewire.on("closeModal", (data) => {
                 if (data && data.id) {
+                    // Pastikan bootstrap.Modal.getInstance() berjalan
                     const modal = bootstrap.Modal.getInstance(
                         document.getElementById(data.id)
                     );
@@ -82,6 +86,7 @@
 
             Livewire.on("showModal", (data) => {
                 if (data && data.id) {
+                    // Pastikan bootstrap.Modal.getOrCreateInstance() berjalan
                     const modal = bootstrap.Modal.getOrCreateInstance(
                         document.getElementById(data.id)
                     );
