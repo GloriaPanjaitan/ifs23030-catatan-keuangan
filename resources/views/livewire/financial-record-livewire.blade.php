@@ -1,16 +1,7 @@
 <div>
     <h2 class="text-2xl font-semibold mb-4">Catatan Keuangan Anda</h2>
 
-    @if (session()->has('message'))
-        <div class="alert alert-success" role="alert">
-            {{ session('message') }}
-        </div>
-    @endif
-    @if (session()->has('error'))
-        <div class="alert alert-danger" role="alert">
-            {{ session('error') }}
-        </div>
-    @endif
+    {{-- Notifikasi flash session lama telah dihapus --}}
 
     <div class="row mb-4">
         <div class="col-md-4">
@@ -72,6 +63,38 @@
 
     <h3 class="h4 mt-4 mb-3">Riwayat Transaksi</h3>
     
+    {{-- Input Pencarian, Filter, dan Tombol Reset (CODE LENGKAP) --}}
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-6 mb-2 mb-md-0">
+            <input 
+                type="text" 
+                class="form-control" 
+                placeholder="Cari berdasarkan deskripsi..."
+                wire:model.live.debounce.300ms="search" 
+            >
+        </div>
+        
+        <div class="col-md-3 mb-2 mb-md-0">
+            <select wire:model.live="filterType" class="form-select">
+                <option value="">Semua Tipe</option>
+                <option value="income">Pemasukan Saja</option>
+                <option value="expense">Pengeluaran Saja</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            @if ($search || $filterType)
+                <button 
+                    wire:click="resetFilter" 
+                    class="btn btn-secondary w-100"
+                >
+                    Reset Filter
+                </button>
+            @endif
+        </div>
+    </div>
+    {{-- END Input Pencarian, Filter, dan Tombol Reset --}}
+
     @forelse ($financialRecords as $record)
         <div class="d-flex justify-content-between align-items-center p-3 mb-2 rounded shadow-sm {{ $record->type == 'income' ? 'bg-white border border-primary border-start-5' : 'bg-light border border-danger border-start-5' }}">
             <div>
@@ -93,8 +116,13 @@
             </div>
         </div>
     @empty
-        <div class="alert alert-info text-center">Belum ada catatan keuangan yang dibuat.</div>
+        <div class="alert alert-info text-center">Belum ada catatan keuangan yang dibuat atau tidak ada data yang cocok dengan kriteria pencarian/filter.</div>
     @endforelse
+
+    {{-- Tautan Pagination Livewire --}}
+    <div class="mt-4">
+        {{ $financialRecords->links() }}
+    </div>
 
     {{-- ========================================================================= --}}
     {{-- MODAL EDIT (HARD-CODED) --}}
@@ -135,26 +163,5 @@
             </div>
         </div>
     </div>
-
-    {{-- ========================================================================= --}}
-    {{-- MODAL DELETE (HARD-CODED) --}}
-    {{-- ========================================================================= --}}
-    <div wire:ignore.self class="modal fade" id="deleteRecordModal" tabindex="-1" aria-labelledby="deleteRecordModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title text-danger" id="deleteRecordModalLabel">Konfirmasi Hapus</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Apakah Anda yakin ingin menghapus catatan keuangan ini? Aksi ini tidak dapat dibatalkan.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" wire:click.prevent="deleteRecord" class="btn btn-danger">Ya, Hapus!</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    {{-- Modal Delete LAMA DIHAPUS, karena digantikan SweetAlert --}}
 </div>

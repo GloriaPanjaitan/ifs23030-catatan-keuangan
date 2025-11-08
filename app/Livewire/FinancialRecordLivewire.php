@@ -5,41 +5,47 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\FinancialRecord;
 use Illuminate\Support\Facades\Auth;
+use Livewire\WithPagination;
 
 class FinancialRecordLivewire extends Component
 {
+    use WithPagination;
+
+    // WAJIB: Listener untuk event global yang dikirim oleh SweetAlert setelah konfirmasi
+    protected $listeners = ['executeDelete']; 
+
+    // Properti untuk Input Form Create
     public $amount;
     public $type = 'expense';
     public $description;
 
-    public $financialRecords;
-    public $totalIncome = 0;
-    public $totalExpense = 0;
-    public $balance = 0;
+    // Properti untuk Pencarian dan Filter
+    public $search = '';
+    public $filterType = ''; 
 
+    // Properti untuk Edit/Update/Delete
     public $recordId; 
     public $editAmount;
     public $editType;
     public $editDescription;
+    
+    // Properti untuk Data dan Ringkasan
+    public $totalIncome = 0;
+    public $totalExpense = 0;
+    public $balance = 0;
+    
+    protected $queryString = ['search' => ['except' => ''], 'filterType' => ['except' => '']];
 
     public function mount()
     {
-        $this->loadRecords();
-    }
-
-    public function loadRecords()
-    {
-        $this->financialRecords = FinancialRecord::where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->get();
-            
         $this->calculateTotals();
     }
-    
+
     public function calculateTotals()
     {
-        $this->totalIncome = $this->financialRecords->where('type', 'income')->sum('amount');
-        $this->totalExpense = $this->financialRecords->where('type', 'expense')->sum('amount');
+        $allRecords = FinancialRecord::where('user_id', Auth::id())->get();
+        $this->totalIncome = $allRecords->where('type', 'income')->sum('amount');
+        $this->totalExpense = $allRecords->where('type', 'expense')->sum('amount');
         $this->balance = $this->totalIncome - $this->totalExpense;
     }
 
@@ -59,16 +65,30 @@ class FinancialRecordLivewire extends Component
         ]);
 
         $this->reset(['amount', 'description']); 
-        $this->loadRecords();
-        session()->flash('message', 'Catatan keuangan berhasil ditambahkan!');
+        $this->calculateTotals(); 
+        $this->resetPage();
+        
+        $this->dispatch('simpleSuccess', title: 'Berhasil!', text: 'Catatan keuangan berhasil ditambahkan.');
+    }
+    
+    public function updated($property)
+    {
+        if ($property === 'search' || $property === 'filterType') {
+            $this->resetPage();
+        }
+    }
+    
+    public function resetFilter()
+    {
+        $this->reset(['search', 'filterType']);
+        $this->resetPage();
     }
 
-    // Perbaikan: dispatch menggunakan named arguments
     public function edit($recordId)
     {
         $record = FinancialRecord::find($recordId);
         if (!$record || $record->user_id !== Auth::id()) {
-            session()->flash('error', 'Catatan tidak ditemukan atau bukan milik Anda.');
+            $this->dispatch('simpleError', title: 'Error', text: 'Catatan tidak ditemukan.');
             return;
         }
 
@@ -91,7 +111,7 @@ class FinancialRecordLivewire extends Component
         $record = FinancialRecord::find($this->recordId);
         
         if (!$record || $record->user_id !== Auth::id()) {
-            session()->flash('error', 'Catatan tidak ditemukan atau bukan milik Anda.');
+            $this->dispatch('simpleError', title: 'Error', text: 'Catatan tidak ditemukan.');
             return;
         }
 
@@ -101,38 +121,58 @@ class FinancialRecordLivewire extends Component
             'description' => $this->editDescription,
         ]);
         
-        $this->loadRecords();
-        $this->dispatch('closeModal', id: 'editRecordModal'); // Perbaikan: dispatch menggunakan named arguments
-        session()->flash('message', 'Catatan keuangan berhasil diperbarui!');
+        $this->calculateTotals();
+        $this->dispatch('closeModal', id: 'editRecordModal'); 
+        
+        $this->dispatch('simpleSuccess', title: 'Berhasil!', text: 'Catatan keuangan berhasil diperbarui.');
+        
         $this->reset(['recordId', 'editAmount', 'editType', 'editDescription']);
     }
 
-    // Perbaikan: dispatch menggunakan named arguments
     public function delete($recordId)
     {
-        $this->recordId = $recordId;
-        $this->dispatch('showModal', id: 'deleteRecordModal'); 
+        $this->dispatch('confirmDelete', id: $recordId); 
     }
 
-    // Perbaikan: dispatch menggunakan named arguments
-    public function deleteRecord()
+    // PERBAIKAN KRUSIAL: Menerima $recordId langsung dari payload JS
+    public function executeDelete($recordId)
     {
-        $record = FinancialRecord::find($this->recordId);
+        // $recordId sekarang sudah berisi ID dari Livewire tanpa masalah Dependency Injection
+        
+        if (!$recordId) {
+             $this->dispatch('deleteError', message: 'Gagal menghapus: ID catatan tidak ditemukan.');
+             return;
+        }
+
+        $record = FinancialRecord::find($recordId);
 
         if ($record && $record->user_id === Auth::id()) {
             $record->delete();
-            session()->flash('message', 'Catatan keuangan berhasil dihapus.');
+            $this->calculateTotals(); 
+            $this->resetPage(); 
+            
+            $this->dispatch('recordDeleted');
         } else {
-            session()->flash('error', 'Catatan tidak ditemukan atau bukan milik Anda.');
+            $this->dispatch('deleteError', message: 'Gagal menghapus: Catatan tidak ditemukan atau bukan milik Anda.');
         }
-
-        $this->dispatch('closeModal', id: 'deleteRecordModal');
-        $this->loadRecords();
-        $this->reset(['recordId']);
     }
     
     public function render()
     {
-        return view('livewire.financial-record-livewire');
+        $query = FinancialRecord::where('user_id', Auth::id());
+        
+        if ($this->filterType && in_array($this->filterType, ['income', 'expense'])) {
+            $query->where('type', $this->filterType);
+        }
+
+        if ($this->search) {
+            $query->where('description', 'like', '%' . $this->search . '%');
+        }
+
+        $financialRecords = $query->orderBy('created_at', 'desc')->paginate(20);
+        
+        return view('livewire.financial-record-livewire', [
+            'financialRecords' => $financialRecords, 
+        ]);
     }
 }
