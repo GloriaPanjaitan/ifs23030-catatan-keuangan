@@ -19,6 +19,8 @@
     
     {{-- SweetAlert2 CSS --}}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    {{-- ApexCharts CSS --}}
+    <link href="https://cdn.jsdelivr.net/npm/apexcharts/dist/apexcharts.css" rel="stylesheet">
 </head>
 
 <body class="bg-light">
@@ -61,13 +63,100 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     {{-- SweetAlert2 JS --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    {{-- BARU: ApexCharts JS --}}
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
     @livewireScripts
 
     <script>
         const BATCH_BOOTSTRAP = window.bootstrap; 
         
+        // FUNGSI INI BARU: Untuk Inisialisasi Chart menggunakan data dinamis
+        function initApexChart() {
+            const livewireChartData = window.financialChartData;
+
+            // Cek apakah wadah chart ada dan data tersedia
+            if (!document.querySelector("#chart") || !livewireChartData || livewireChartData.categories.length === 0) {
+                // Hentikan jika tidak ada wadah atau data
+                return; 
+            }
+            
+             var options = {
+                // Menggunakan data SERIES dari PHP
+                series: livewireChartData.series, 
+                
+                chart: {
+                    type: 'bar',
+                    height: 350,
+                    // Menggunakan stacked: false untuk perbandingan Income vs Expense
+                    stacked: false, 
+                    toolbar: {
+                        show: true
+                    }
+                },
+                stroke: {
+                    width: 1,
+                    colors: ['#fff']
+                },
+                dataLabels: {
+                    enabled: false // Matikan label data agar tidak terlalu ramai
+                },
+                plotOptions: {
+                    bar: {
+                        horizontal: false
+                    }
+                },
+                // Menggunakan KATEGORI (Bulan YYYY) dari PHP
+                xaxis: {
+                    categories: livewireChartData.categories
+                },
+                fill: {
+                    opacity: 1
+                },
+                colors: ['#008FFB', '#FF4560'], // Biru untuk Pemasukan, Merah untuk Pengeluaran
+                yaxis: {
+                    labels: {
+                        formatter: (val) => {
+                            // Format Y-axis ke K (Ribu)
+                            if (val >= 1000000) return (val / 1000000).toFixed(1) + ' Jt';
+                            return val / 1000 + 'K';
+                        }
+                    }
+                },
+                tooltip: {
+                    y: {
+                        formatter: (val) => {
+                             // Format tooltip sebagai mata uang Rupiah
+                            return 'Rp ' + val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                        }
+                    }
+                },
+                legend: {
+                    position: 'top',
+                    horizontalAlign: 'left'
+                }
+            };
+            
+            // Render Chart
+            var chart = new ApexCharts(document.querySelector("#chart"), options);
+            chart.render();
+        }
+        
         document.addEventListener("livewire:initialized", () => {
-            // Livewire/Bootstrap Modal Handlers (untuk modal Edit)
+            // PANGGIL CHART SAAT LIVEWIRE SIAP
+            initApexChart(); 
+            
+            // WAJIB: Panggil ulang chart saat Livewire meng-update DOM 
+            // (misalnya setelah Tambah/Edit/Hapus data)
+            Livewire.hook('morph.updated', ({ component, el }) => {
+                if (el.id === 'chart') {
+                    initApexChart();
+                }
+            });
+
+            // ... (Kode Livewire/SweetAlert Listeners lainnya tetap di sini) ...
+            
+            // ... (Livewire/Bootstrap Modal Handlers) ...
             Livewire.on("closeModal", (data) => {
                 if (data && data.id && BATCH_BOOTSTRAP) { 
                     const modal = BATCH_BOOTSTRAP.Modal.getInstance(
@@ -86,11 +175,7 @@
                 }
             });
 
-            // =========================================================
             // SWEETALERT LISTENERS
-            // =========================================================
-            
-            // 1. Diterima dari PHP (Notifikasi Sukses Tambah/Update - TOAST)
             Livewire.on("simpleSuccess", (data) => {
                 Swal.fire({
                   position: "top-end",
@@ -101,7 +186,6 @@
                 });
             });
             
-            // 2. Diterima dari PHP (Konfirmasi Hapus - MODAL KONFIRMASI)
             Livewire.on("confirmDelete", (data) => {
                 const recordId = data.id;
 
@@ -116,7 +200,6 @@
                     cancelButtonText: "No, cancel!", 
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        // WAJIB: Gunakan window.Livewire.dispatch global untuk event listener
                         window.Livewire.dispatch('executeDelete', { recordId: recordId });
                         
                     } else if (result.dismiss === Swal.DismissReason.cancel) {
@@ -129,7 +212,6 @@
                 });
             });
             
-            // 3. Diterima dari PHP (setelah Hapus berhasil - MODAL SUKSES PENUH)
             Livewire.on("recordDeleted", () => {
                 Swal.fire({
                     title: "Deleted!",
@@ -138,7 +220,6 @@
                 });
             });
 
-            // 4. Diterima dari PHP (notifikasi error - TOAST)
             Livewire.on("deleteError", (data) => {
                 Swal.fire({
                     toast: true,

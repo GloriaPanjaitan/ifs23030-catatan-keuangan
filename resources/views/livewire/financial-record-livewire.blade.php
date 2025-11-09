@@ -29,6 +29,19 @@
             </div>
         </div>
     </div>
+    {{-- BARU: WADAH CHART --}}
+    {{-- BARU: WADAH CHART DINAMIS --}}
+    <div class="card shadow mb-4" wire:ignore>
+        <div class="card-header">Visualisasi Data (Pemasukan vs. Pengeluaran Bulanan)</div>
+        <div class="card-body">
+            <div id="chart"></div>
+        </div>
+    </div>
+    <script>
+        // Data PHP kini tersedia di variabel global JS
+        window.financialChartData = @json($chartData);
+    </script>
+    {{-- END WADAH CHART --}}
 
     <div class="card shadow mb-4">
         <div class="card-header">Tambah Catatan Baru</div>

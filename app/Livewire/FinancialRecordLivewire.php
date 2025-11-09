@@ -11,25 +11,20 @@ class FinancialRecordLivewire extends Component
 {
     use WithPagination;
 
-    // WAJIB: Listener untuk event global yang dikirim oleh SweetAlert setelah konfirmasi
     protected $listeners = ['executeDelete']; 
 
-    // Properti untuk Input Form Create
     public $amount;
     public $type = 'expense';
     public $description;
 
-    // Properti untuk Pencarian dan Filter
     public $search = '';
     public $filterType = ''; 
 
-    // Properti untuk Edit/Update/Delete
     public $recordId; 
     public $editAmount;
     public $editType;
     public $editDescription;
     
-    // Properti untuk Data dan Ringkasan
     public $totalIncome = 0;
     public $totalExpense = 0;
     public $balance = 0;
@@ -47,6 +42,45 @@ class FinancialRecordLivewire extends Component
         $this->totalIncome = $allRecords->where('type', 'income')->sum('amount');
         $this->totalExpense = $allRecords->where('type', 'expense')->sum('amount');
         $this->balance = $this->totalIncome - $this->totalExpense;
+    }
+
+    // BARU: Metode untuk mengumpulkan data chart bulanan
+    private function getMonthlyChartData()
+    {
+        $records = FinancialRecord::where('user_id', Auth::id())
+            ->orderBy('created_at')
+            ->get();
+
+        $monthlyData = $records->groupBy(function($date) {
+            // Kelompokkan berdasarkan Tahun-Bulan (Y-m) untuk sorting yang benar
+            return \Carbon\Carbon::parse($date->created_at)->format('Y-m');
+        })->map(function ($group) {
+            return [
+                'income' => $group->where('type', 'income')->sum('amount'),
+                'expense' => $group->where('type', 'expense')->sum('amount'),
+                // Label yang mudah dibaca untuk kategori chart
+                'label' => \Carbon\Carbon::parse($group->first()->created_at)->format('M Y') 
+            ];
+        });
+
+        // Ekstrak kategori dan series
+        $categories = $monthlyData->pluck('label')->toArray();
+        $incomeSeries = $monthlyData->pluck('income')->toArray();
+        $expenseSeries = $monthlyData->pluck('expense')->toArray();
+
+        return [
+            'categories' => $categories,
+            'series' => [
+                [
+                    'name' => 'Total Pemasukan',
+                    'data' => $incomeSeries
+                ],
+                [
+                    'name' => 'Total Pengeluaran',
+                    'data' => $expenseSeries
+                ]
+            ]
+        ];
     }
 
     public function addRecord()
@@ -134,11 +168,8 @@ class FinancialRecordLivewire extends Component
         $this->dispatch('confirmDelete', id: $recordId); 
     }
 
-    // PERBAIKAN KRUSIAL: Menerima $recordId langsung dari payload JS
     public function executeDelete($recordId)
     {
-        // $recordId sekarang sudah berisi ID dari Livewire tanpa masalah Dependency Injection
-        
         if (!$recordId) {
              $this->dispatch('deleteError', message: 'Gagal menghapus: ID catatan tidak ditemukan.');
              return;
@@ -171,8 +202,12 @@ class FinancialRecordLivewire extends Component
 
         $financialRecords = $query->orderBy('created_at', 'desc')->paginate(20);
         
+        // Panggil dan teruskan data chart
+        $chartData = $this->getMonthlyChartData();
+        
         return view('livewire.financial-record-livewire', [
             'financialRecords' => $financialRecords, 
+            'chartData' => $chartData, // Kirim data dinamis ke view
         ]);
     }
 }
