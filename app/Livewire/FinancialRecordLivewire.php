@@ -28,6 +28,10 @@ class FinancialRecordLivewire extends Component
     public $totalIncome = 0;
     public $totalExpense = 0;
     public $balance = 0;
+
+    // ID Chart yang berbeda
+    public $chartId1 = 'monthlyChart'; // Chart 1: Bar Monthly
+    public $chartId2 = 'cumulativeChart'; // Chart 2: Area Cumulative
     
     protected $queryString = ['search' => ['except' => ''], 'filterType' => ['except' => '']];
 
@@ -44,7 +48,6 @@ class FinancialRecordLivewire extends Component
         $this->balance = $this->totalIncome - $this->totalExpense;
     }
 
-    // BARU: Metode untuk mengumpulkan data chart bulanan
     private function getMonthlyChartData()
     {
         $records = FinancialRecord::where('user_id', Auth::id())
@@ -52,18 +55,15 @@ class FinancialRecordLivewire extends Component
             ->get();
 
         $monthlyData = $records->groupBy(function($date) {
-            // Kelompokkan berdasarkan Tahun-Bulan (Y-m) untuk sorting yang benar
             return \Carbon\Carbon::parse($date->created_at)->format('Y-m');
         })->map(function ($group) {
             return [
                 'income' => $group->where('type', 'income')->sum('amount'),
                 'expense' => $group->where('type', 'expense')->sum('amount'),
-                // Label yang mudah dibaca untuk kategori chart
                 'label' => \Carbon\Carbon::parse($group->first()->created_at)->format('M Y') 
             ];
         });
 
-        // Ekstrak kategori dan series
         $categories = $monthlyData->pluck('label')->toArray();
         $incomeSeries = $monthlyData->pluck('income')->toArray();
         $expenseSeries = $monthlyData->pluck('expense')->toArray();
@@ -81,6 +81,59 @@ class FinancialRecordLivewire extends Component
                 ]
             ]
         ];
+    }
+    
+    // FINAL: Metode untuk menghitung Saldo Kumulatif (Chart KATEGORIKAL)
+    private function getCumulativeChartData()
+    {
+        $records = FinancialRecord::where('user_id', Auth::id())
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        $runningBalance = 0;
+        $categories = [];
+        $seriesData = [];
+        $counter = 0;
+        $initialBalance = 0; 
+
+        // Tambahkan titik awal 'Mulai'
+        $seriesData[] = $initialBalance;
+        $categories[] = 'Mulai';
+
+        foreach ($records as $record) {
+            $amount = $record->amount;
+            if ($record->type === 'expense') {
+                $runningBalance -= $amount;
+            } else {
+                $runningBalance += $amount;
+            }
+            $counter++;
+
+            $seriesData[] = $runningBalance; 
+            
+            // Label X-axis: Deskripsi Transaksi + Tanggal singkat
+            $label = ($record->description ?: 'Trans #'.$counter) . ' (' . \Carbon\Carbon::parse($record->created_at)->format('d/m') . ')';
+            $categories[] = $label;
+        }
+
+        return [
+            'categories' => $categories,
+            'series' => [
+                [
+                    'name' => 'Saldo Kumulatif', 
+                    'data' => $seriesData
+                ]
+            ]
+        ];
+    }
+
+    // Dispatch data untuk kedua chart
+    private function dispatchChartUpdate()
+    {
+        $monthlyData = $this->getMonthlyChartData();
+        $cumulativeData = $this->getCumulativeChartData(); 
+
+        $this->dispatch('chartDataUpdated', monthly: $monthlyData, cumulative: $cumulativeData);
     }
 
     public function addRecord()
@@ -101,6 +154,8 @@ class FinancialRecordLivewire extends Component
         $this->reset(['amount', 'description']); 
         $this->calculateTotals(); 
         $this->resetPage();
+        
+        $this->dispatchChartUpdate(); 
         
         $this->dispatch('simpleSuccess', title: 'Berhasil!', text: 'Catatan keuangan berhasil ditambahkan.');
     }
@@ -158,6 +213,8 @@ class FinancialRecordLivewire extends Component
         $this->calculateTotals();
         $this->dispatch('closeModal', id: 'editRecordModal'); 
         
+        $this->dispatchChartUpdate(); 
+        
         $this->dispatch('simpleSuccess', title: 'Berhasil!', text: 'Catatan keuangan berhasil diperbarui.');
         
         $this->reset(['recordId', 'editAmount', 'editType', 'editDescription']);
@@ -182,6 +239,8 @@ class FinancialRecordLivewire extends Component
             $this->calculateTotals(); 
             $this->resetPage(); 
             
+            $this->dispatchChartUpdate(); 
+            
             $this->dispatch('recordDeleted');
         } else {
             $this->dispatch('deleteError', message: 'Gagal menghapus: Catatan tidak ditemukan atau bukan milik Anda.');
@@ -202,12 +261,15 @@ class FinancialRecordLivewire extends Component
 
         $financialRecords = $query->orderBy('created_at', 'desc')->paginate(20);
         
-        // Panggil dan teruskan data chart
-        $chartData = $this->getMonthlyChartData();
+        $chartData1 = $this->getMonthlyChartData();
+        $chartData2 = $this->getCumulativeChartData();
         
         return view('livewire.financial-record-livewire', [
             'financialRecords' => $financialRecords, 
-            'chartData' => $chartData, // Kirim data dinamis ke view
+            'chartData1' => $chartData1,
+            'chartData2' => $chartData2,
+            'chartId1' => $this->chartId1,
+            'chartId2' => $this->chartId2,
         ]);
     }
 }

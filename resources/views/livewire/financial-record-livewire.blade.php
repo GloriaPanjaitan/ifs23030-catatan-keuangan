@@ -1,9 +1,8 @@
 <div>
     <h2 class="text-2xl font-semibold mb-4">Catatan Keuangan Anda</h2>
 
-    {{-- Notifikasi flash session lama telah dihapus --}}
-
     <div class="row mb-4">
+        {{-- Total Pemasukan/Pengeluaran/Saldo --}}
         <div class="col-md-4">
             <div class="card bg-primary text-white shadow">
                 <div class="card-body">
@@ -28,20 +27,33 @@
                 </div>
             </div>
         </div>
-    </div>
-    {{-- BARU: WADAH CHART --}}
-    {{-- BARU: WADAH CHART DINAMIS --}}
+    </div> 
+
+    {{-- CHART 1: BULANAN (WADAH) --}}
     <div class="card shadow mb-4" wire:ignore>
         <div class="card-header">Visualisasi Data (Pemasukan vs. Pengeluaran Bulanan)</div>
         <div class="card-body">
-            <div id="chart"></div>
+            <div id="{{ $chartId1 }}"></div> 
         </div>
     </div>
+    
+    {{-- CHART 2: SALDO KUMULATIF (WADAH BARU) --}}
+    <div class="card shadow mb-4" wire:ignore>
+        <div class="card-header">Saldo Kumulatif Berdasarkan Transaksi</div>
+        <div class="card-body">
+            <div id="{{ $chartId2 }}"></div>
+        </div>
+    </div>
+    
+    {{-- SERIALISASI DATA UNTUK JAVASCRIPT --}}
     <script>
-        // Data PHP kini tersedia di variabel global JS
-        window.financialChartData = @json($chartData);
+        // Data Chart 1
+        window.financialChartData1 = @json($chartData1);
+        window.chartContainerId1 = @json($chartId1); 
+        // Data Chart 2
+        window.financialChartData2 = @json($chartData2);
+        window.chartContainerId2 = @json($chartId2); 
     </script>
-    {{-- END WADAH CHART --}}
 
     <div class="card shadow mb-4">
         <div class="card-header">Tambah Catatan Baru</div>
@@ -76,7 +88,7 @@
 
     <h3 class="h4 mt-4 mb-3">Riwayat Transaksi</h3>
     
-    {{-- Input Pencarian, Filter, dan Tombol Reset (CODE LENGKAP) --}}
+    {{-- Input Pencarian, Filter, dan Tombol Reset --}}
     <div class="row mb-3 align-items-center">
         <div class="col-md-6 mb-2 mb-md-0">
             <input 
@@ -137,9 +149,7 @@
         {{ $financialRecords->links() }}
     </div>
 
-    {{-- ========================================================================= --}}
     {{-- MODAL EDIT (HARD-CODED) --}}
-    {{-- ========================================================================= --}}
     <div wire:ignore.self class="modal fade" id="editRecordModal" tabindex="-1" aria-labelledby="editRecordModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -176,5 +186,4 @@
             </div>
         </div>
     </div>
-    {{-- Modal Delete LAMA DIHAPUS, karena digantikan SweetAlert --}}
 </div>

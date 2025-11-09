@@ -19,8 +19,6 @@
     
     {{-- SweetAlert2 CSS --}}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    {{-- ApexCharts CSS --}}
-    <link href="https://cdn.jsdelivr.net/npm/apexcharts/dist/apexcharts.css" rel="stylesheet">
 </head>
 
 <body class="bg-light">
@@ -63,61 +61,48 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     {{-- SweetAlert2 JS --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    {{-- BARU: ApexCharts JS --}}
+    {{-- ApexCharts JS --}}
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-
+    {{-- Moment.js CDN --}}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    
     @livewireScripts
 
+    {{-- 3. SCRIPT KONEKTOR LIVEWIRE/BOOTSTRAP & SWEETALERT & CHART --}}
     <script>
         const BATCH_BOOTSTRAP = window.bootstrap; 
         
-        // FUNGSI INI BARU: Untuk Inisialisasi Chart menggunakan data dinamis
-        function initApexChart() {
-            const livewireChartData = window.financialChartData;
+        let chartInstance1 = null; // Monthly Chart Instance
+        let chartInstance2 = null; // Cumulative Chart Instance
 
-            // Cek apakah wadah chart ada dan data tersedia
-            if (!document.querySelector("#chart") || !livewireChartData || livewireChartData.categories.length === 0) {
-                // Hentikan jika tidak ada wadah atau data
+        // FUNGSI INIT CHART 1 (Monthly Bar Chart)
+        function initMonthlyChart(chartData) {
+            const containerId = window.chartContainerId1 || 'monthlyChart';
+            const chartContainer = document.getElementById(containerId);
+
+            if (!chartContainer || !chartData || chartData.categories.length === 0) {
+                 if (chartInstance1) { chartInstance1.destroy(); chartInstance1 = null; }
                 return; 
             }
-            
-             var options = {
-                // Menggunakan data SERIES dari PHP
-                series: livewireChartData.series, 
-                
+            if (chartInstance1) { chartInstance1.destroy(); chartInstance1 = null; }
+
+            var options = {
+                series: chartData.series, 
                 chart: {
                     type: 'bar',
                     height: 350,
-                    // Menggunakan stacked: false untuk perbandingan Income vs Expense
                     stacked: false, 
-                    toolbar: {
-                        show: true
-                    }
+                    toolbar: { show: true }
                 },
-                stroke: {
-                    width: 1,
-                    colors: ['#fff']
-                },
-                dataLabels: {
-                    enabled: false // Matikan label data agar tidak terlalu ramai
-                },
-                plotOptions: {
-                    bar: {
-                        horizontal: false
-                    }
-                },
-                // Menggunakan KATEGORI (Bulan YYYY) dari PHP
-                xaxis: {
-                    categories: livewireChartData.categories
-                },
-                fill: {
-                    opacity: 1
-                },
-                colors: ['#008FFB', '#FF4560'], // Biru untuk Pemasukan, Merah untuk Pengeluaran
+                stroke: { width: 1, colors: ['#fff'] },
+                dataLabels: { enabled: false },
+                plotOptions: { bar: { horizontal: false } },
+                xaxis: { categories: chartData.categories },
+                fill: { opacity: 1 },
+                colors: ['#008FFB', '#FF4560'],
                 yaxis: {
                     labels: {
                         formatter: (val) => {
-                            // Format Y-axis ke K (Ribu)
                             if (val >= 1000000) return (val / 1000000).toFixed(1) + ' Jt';
                             return val / 1000 + 'K';
                         }
@@ -126,37 +111,118 @@
                 tooltip: {
                     y: {
                         formatter: (val) => {
-                             // Format tooltip sebagai mata uang Rupiah
                             return 'Rp ' + val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
                         }
                     }
                 },
-                legend: {
-                    position: 'top',
-                    horizontalAlign: 'left'
-                }
+                legend: { position: 'top', horizontalAlign: 'left' }
             };
-            
-            // Render Chart
-            var chart = new ApexCharts(document.querySelector("#chart"), options);
-            chart.render();
+
+            chartInstance1 = new ApexCharts(chartContainer, options);
+            chartInstance1.render();
         }
-        
+
+        // FUNGSI INIT CHART 2 (Cumulative Area Chart) - FINAL KATEGORIKAL
+        function initCumulativeChart(chartData) {
+            const containerId = window.chartContainerId2 || 'cumulativeChart';
+            const chartContainer = document.getElementById(containerId);
+
+            if (!chartContainer || !chartData || chartData.series[0].data.length <= 1) { 
+                 if (chartInstance2) { chartInstance2.destroy(); chartInstance2 = null; }
+                return;
+            }
+            if (chartInstance2) { chartInstance2.destroy(); chartInstance2 = null; }
+
+            var options = {
+                series: chartData.series, 
+                chart: {
+                    type: 'line', 
+                    height: 350,
+                    stacked: false,
+                    zoom: { enabled: false },
+                },
+                stroke: { curve: 'stepline', width: 2 }, 
+                dataLabels: { enabled: false },
+                markers: { size: 4 }, 
+                fill: { opacity: 1 },
+                colors: ['#00E396'], 
+                
+                xaxis: {
+                    type: 'category', 
+                    categories: chartData.categories, 
+                    labels: {
+                        rotate: -45, 
+                        rotateAlways: true,
+                        trim: false
+                    },
+                    tickPlacement: 'on'
+                },
+
+                yaxis: {
+                    labels: {
+                        style: { colors: '#8e8da4' },
+                        offsetX: 0,
+                        formatter: function(val) {
+                            return (val / 1000000).toFixed(2) + ' Jt';
+                        },
+                    },
+                    axisBorder: { show: false },
+                    axisTicks: { show: false }
+                },
+                title: {
+                    text: 'Saldo Kumulatif Berdasarkan Transaksi',
+                    align: 'left',
+                    offsetX: 14
+                },
+                tooltip: {
+                    shared: true,
+                    x: {
+                        show: true,
+                        formatter: function(val) {
+                            return val; 
+                        }
+                    },
+                    y: {
+                        formatter: function(val) {
+                            return 'Rp ' + val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                        }
+                    }
+                },
+                legend: { position: 'top', horizontalAlign: 'right', offsetX: -10 }
+            };
+
+            chartInstance2 = new ApexCharts(chartContainer, options);
+            chartInstance2.render();
+        }
+
         document.addEventListener("livewire:initialized", () => {
-            // PANGGIL CHART SAAT LIVEWIRE SIAP
-            initApexChart(); 
+            // PANGGIL INIALISASI AWAL
+            initMonthlyChart(window.financialChartData1);
+            initCumulativeChart(window.financialChartData2); 
             
-            // WAJIB: Panggil ulang chart saat Livewire meng-update DOM 
-            // (misalnya setelah Tambah/Edit/Hapus data)
-            Livewire.hook('morph.updated', ({ component, el }) => {
-                if (el.id === 'chart') {
-                    initApexChart();
+            // LISTENER OTOMATIS UNTUK MEMPERBARUI KEDUA CHART
+            Livewire.on("chartDataUpdated", (event) => {
+                const monthlyData = event.monthly;
+                const cumulativeData = event.cumulative; 
+
+                // UPDATE CHART 1 (Monthly)
+                if (chartInstance1) {
+                    chartInstance1.updateSeries(monthlyData.series); 
+                    chartInstance1.updateOptions({ xaxis: { categories: monthlyData.categories } });
+                } else if (monthlyData) {
+                    initMonthlyChart(monthlyData);
+                }
+
+                // UPDATE CHART 2 (Cumulative)
+                if (chartInstance2) {
+                    chartInstance2.updateSeries(cumulativeData.series); 
+                    chartInstance2.updateOptions({ xaxis: { categories: cumulativeData.categories } });
+                } else if (cumulativeData) {
+                    initCumulativeChart(cumulativeData);
                 }
             });
 
-            // ... (Kode Livewire/SweetAlert Listeners lainnya tetap di sini) ...
-            
-            // ... (Livewire/Bootstrap Modal Handlers) ...
+            // LIVEWIRE/BOOTSTRAP MODAL HANDLERS
             Livewire.on("closeModal", (data) => {
                 if (data && data.id && BATCH_BOOTSTRAP) { 
                     const modal = BATCH_BOOTSTRAP.Modal.getInstance(
