@@ -7,7 +7,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    
+    {{-- Icon --}}
+    <link rel="icon" href="/logo.png" type="image/x-icon" />
     
 
     {{-- Judul --}}
@@ -19,13 +20,39 @@
     
     {{-- SweetAlert2 CSS --}}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <style>
+        
+        body {
+            -webkit-text-size-adjust: none; 
+            text-size-adjust: none;
+        }
+        
+       
+        th {
+            /* Prioritas tinggi untuk versi non-vendor */
+            text-align: match-parent; 
+            text-align: -webkit-match-parent; 
+        }
+
+       
+        div:where(.swal2-icon) {
+            -webkit-user-select: none; /* Tambahkan awalan vendor untuk Safari lama */
+            user-select: none;
+        }
+        body {
+            background-color: aquamarine(red, green, blue, alpha)(red, green, blue)(in hsl shorter hue, color percentage, color percentage) !important; /* Contoh warna Light Blue */
+            -webkit-text-size-adjust: none; 
+            text-size-adjust: none;
+        }
+    </style>
 </head>
 
 <body class="bg-light">
     
     {{-- NAVIGASI --}}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-light bg-info">
         <div class="container">
+            
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">

@@ -88,7 +88,7 @@
 
     <h3 class="h4 mt-4 mb-3">Riwayat Transaksi</h3>
     
-    {{-- Input Pencarian, Filter, dan Tombol Reset --}}
+    {{-- Input Pencarian, Filter, dan Tombol Reset (Perbaikan Aksesibilitas di sini) --}}
     <div class="row mb-3 align-items-center">
         <div class="col-md-6 mb-2 mb-md-0">
             <input 
@@ -96,11 +96,12 @@
                 class="form-control" 
                 placeholder="Cari berdasarkan deskripsi..."
                 wire:model.live.debounce.300ms="search" 
+                aria-label="Kolom Pencarian Transaksi" {{-- Tambahan aria-label untuk Search --}}
             >
         </div>
         
         <div class="col-md-3 mb-2 mb-md-0">
-            <select wire:model.live="filterType" class="form-select">
+            <select wire:model.live="filterType" class="form-select" aria-label="Filter berdasarkan tipe transaksi"> {{-- PERBAIKAN UTAMA: Tambahkan aria-label --}}
                 <option value="">Semua Tipe</option>
                 <option value="income">Pemasukan Saja</option>
                 <option value="expense">Pengeluaran Saja</option>
@@ -112,6 +113,7 @@
                 <button 
                     wire:click="resetFilter" 
                     class="btn btn-secondary w-100"
+                    aria-label="Tombol Reset Filter dan Pencarian" {{-- Tambahan aria-label --}}
                 >
                     Reset Filter
                 </button>
@@ -131,11 +133,11 @@
                     {{ $record->type == 'income' ? '+' : '-' }} Rp {{ number_format($record->amount, 0, ',', '.') }}
                 </p>
                 
-                <button wire:click="edit({{ $record->id }})" class="btn btn-sm btn-warning me-2 text-white">
+                <button wire:click="edit({{ $record->id }})" class="btn btn-sm btn-warning me-2 text-white" aria-label="Edit Catatan">
                     Edit
                 </button>
                 
-                <button wire:click="delete({{ $record->id }})" class="btn btn-sm btn-danger">
+                <button wire:click="delete({{ $record->id }})" class="btn btn-sm btn-danger" aria-label="Hapus Catatan">
                     Hapus
                 </button>
             </div>

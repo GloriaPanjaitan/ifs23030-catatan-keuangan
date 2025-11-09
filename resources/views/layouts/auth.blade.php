@@ -8,6 +8,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     {{-- Icon --}}
+    {{-- Icon --}}
+    <link rel="icon" href="/logo.png" type="image/x-icon" />
     
 
     
@@ -15,6 +17,13 @@
     {{-- Styles --}}
     @livewireStyles
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Solusi Override CSS untuk Accessibility Warning */
+        body {
+            -webkit-text-size-adjust: none; 
+            text-size-adjust: none;
+        }
+    </style>
 </head>
 
 <body class="bg-light">
