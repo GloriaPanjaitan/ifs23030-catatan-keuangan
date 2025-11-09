@@ -7,8 +7,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    {{-- Icon --}}
-    <link rel="icon" href="/logo.png" type="image/x-icon" />
+    
+    
 
     {{-- Judul --}}
     <title>Laravel Catatan Keuangan</title>

@@ -8,10 +8,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     {{-- Icon --}}
-    <link rel="icon" href="/logo.png" type="image/x-icon" />
+    
 
-    {{-- Judul --}}
-    <title>Laravel Todolist</title>
+    
 
     {{-- Styles --}}
     @livewireStyles
@@ -24,16 +23,13 @@
             <div class="col-md-5">
                 <div class="card border-0 shadow-sm rounded-4">
                     <div class="card-body p-4">
-                        <div class="text-center mb-4">
-                            <img src="/logo.png" alt="Logo" width="80" class="mb-2">
-                            <h4 class="fw-bold">Laravel Todolist</h4>
-                        </div>
+                         
 
                         {{-- Konten halaman (login/register) --}}
                         @yield('content')
 
                         <div class="mt-4 text-center text-muted small">
-                            <p>© {{ date('Y') }} Laravel Todolist - Praktikum PABWE</p>
+                            <p>© {{ date('Y') }} Catatan Keuangan - Gloria Panjaitan</p>
                         </div>
                     </div>
                 </div>

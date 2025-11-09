@@ -3,7 +3,12 @@
         <div class="card-body">
             <div>
                 <div class="text-center">
-                    <img src="/logo.png" alt="Logo">
+                    <img 
+                        src="https://cdn-icons-png.flaticon.com/512/8693/8693064.png" 
+                        alt="Ikon Catatan Keuangan" 
+                        width="80" 
+                        class="mb-2"
+                    >
                     <h2>Mendaftar</h2>
                 </div>
                 <hr>
