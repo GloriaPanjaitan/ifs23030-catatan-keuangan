@@ -29,15 +29,15 @@
         </div>
     </div> 
 
-    {{-- CHART 1: BULANAN (WADAH) --}}
+    {{-- CHART 1: BULANAN (MIXED CHART) --}}
     <div class="card shadow mb-4" wire:ignore>
-        <div class="card-header">Visualisasi Data (Pemasukan vs. Pengeluaran Bulanan)</div>
+        <div class="card-header">Visualisasi Data (Pemasukan, Pengeluaran, & Saldo Bulanan)</div>
         <div class="card-body">
             <div id="{{ $chartId1 }}"></div> 
         </div>
     </div>
     
-    {{-- CHART 2: SALDO KUMULATIF (WADAH BARU) --}}
+    {{-- CHART 2: SALDO KUMULATIF --}}
     <div class="card shadow mb-4" wire:ignore>
         <div class="card-header">Saldo Kumulatif Berdasarkan Transaksi</div>
         <div class="card-body">

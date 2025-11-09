@@ -57,9 +57,13 @@ class FinancialRecordLivewire extends Component
         $monthlyData = $records->groupBy(function($date) {
             return \Carbon\Carbon::parse($date->created_at)->format('Y-m');
         })->map(function ($group) {
+            $income = $group->where('type', 'income')->sum('amount');
+            $expense = $group->where('type', 'expense')->sum('amount');
+            
             return [
-                'income' => $group->where('type', 'income')->sum('amount'),
-                'expense' => $group->where('type', 'expense')->sum('amount'),
+                'income' => $income,
+                'expense' => $expense,
+                'net_balance' => $income - $expense, // SALDO AKHIR BULANAN
                 'label' => \Carbon\Carbon::parse($group->first()->created_at)->format('M Y') 
             ];
         });
@@ -67,6 +71,7 @@ class FinancialRecordLivewire extends Component
         $categories = $monthlyData->pluck('label')->toArray();
         $incomeSeries = $monthlyData->pluck('income')->toArray();
         $expenseSeries = $monthlyData->pluck('expense')->toArray();
+        $netBalanceSeries = $monthlyData->pluck('net_balance')->toArray();
 
         return [
             'categories' => $categories,
@@ -78,12 +83,15 @@ class FinancialRecordLivewire extends Component
                 [
                     'name' => 'Total Pengeluaran',
                     'data' => $expenseSeries
+                ],
+                [ 
+                    'name' => 'Saldo Akhir',
+                    'data' => $netBalanceSeries
                 ]
             ]
         ];
     }
     
-    // FINAL: Metode untuk menghitung Saldo Kumulatif (Chart KATEGORIKAL)
     private function getCumulativeChartData()
     {
         $records = FinancialRecord::where('user_id', Auth::id())
@@ -96,7 +104,6 @@ class FinancialRecordLivewire extends Component
         $counter = 0;
         $initialBalance = 0; 
 
-        // Tambahkan titik awal 'Mulai'
         $seriesData[] = $initialBalance;
         $categories[] = 'Mulai';
 
@@ -111,7 +118,6 @@ class FinancialRecordLivewire extends Component
 
             $seriesData[] = $runningBalance; 
             
-            // Label X-axis: Deskripsi Transaksi + Tanggal singkat
             $label = ($record->description ?: 'Trans #'.$counter) . ' (' . \Carbon\Carbon::parse($record->created_at)->format('d/m') . ')';
             $categories[] = $label;
         }
@@ -127,7 +133,6 @@ class FinancialRecordLivewire extends Component
         ];
     }
 
-    // Dispatch data untuk kedua chart
     private function dispatchChartUpdate()
     {
         $monthlyData = $this->getMonthlyChartData();

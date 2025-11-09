@@ -75,7 +75,7 @@
         let chartInstance1 = null; // Monthly Chart Instance
         let chartInstance2 = null; // Cumulative Chart Instance
 
-        // FUNGSI INIT CHART 1 (Monthly Bar Chart)
+        // FUNGSI INIT CHART 1 (Monthly Mixed Chart: Bar + Line)
         function initMonthlyChart(chartData) {
             const containerId = window.chartContainerId1 || 'monthlyChart';
             const chartContainer = document.getElementById(containerId);
@@ -86,20 +86,42 @@
             }
             if (chartInstance1) { chartInstance1.destroy(); chartInstance1 = null; }
 
-            var options = {
-                series: chartData.series, 
-                chart: {
+            // Pisahkan data menjadi Bar (1 & 2) dan Line (3)
+            var seriesOptions = [
+                {
+                    name: chartData.series[0].name, // Total Pemasukan
                     type: 'bar',
+                    data: chartData.series[0].data
+                },
+                {
+                    name: chartData.series[1].name, // Total Pengeluaran
+                    type: 'bar',
+                    data: chartData.series[1].data
+                },
+                {
+                    name: chartData.series[2].name, // Saldo Akhir
+                    type: 'line',
+                    data: chartData.series[2].data
+                }
+            ];
+
+            var options = {
+                series: seriesOptions, 
+                chart: {
+                    type: 'bar', 
                     height: 350,
                     stacked: false, 
                     toolbar: { show: true }
                 },
-                stroke: { width: 1, colors: ['#fff'] },
+                stroke: { 
+                    width: [1, 1, 4], 
+                    curve: 'smooth' 
+                },
                 dataLabels: { enabled: false },
-                plotOptions: { bar: { horizontal: false } },
+                plotOptions: { bar: { horizontal: false, columnWidth: '50%' } },
                 xaxis: { categories: chartData.categories },
-                fill: { opacity: 1 },
-                colors: ['#008FFB', '#FF4560'],
+                fill: { opacity: [1, 1, 0.8] },
+                colors: ['#008FFB', '#FF4560', '#00E396'], 
                 yaxis: {
                     labels: {
                         formatter: (val) => {
@@ -122,12 +144,12 @@
             chartInstance1.render();
         }
 
-        // FUNGSI INIT CHART 2 (Cumulative Area Chart) - FINAL KATEGORIKAL
+        // FUNGSI INIT CHART 2 (Cumulative Area Chart)
         function initCumulativeChart(chartData) {
             const containerId = window.chartContainerId2 || 'cumulativeChart';
             const chartContainer = document.getElementById(containerId);
 
-            if (!chartContainer || !chartData || chartData.series[0].data.length <= 1) { 
+            if (!chartContainer || !chartData || chartData.series[0].data.length <= 1) {
                  if (chartInstance2) { chartInstance2.destroy(); chartInstance2 = null; }
                 return;
             }
@@ -205,15 +227,22 @@
                 const monthlyData = event.monthly;
                 const cumulativeData = event.cumulative; 
 
-                // UPDATE CHART 1 (Monthly)
+                // --- UPDATE CHART 1 (Monthly) ---
                 if (chartInstance1) {
-                    chartInstance1.updateSeries(monthlyData.series); 
-                    chartInstance1.updateOptions({ xaxis: { categories: monthlyData.categories } });
+                    // Update series harus dikirim dalam format yang sama seperti init
+                    chartInstance1.updateOptions({
+                        series: [
+                            { name: monthlyData.series[0].name, type: 'bar', data: monthlyData.series[0].data },
+                            { name: monthlyData.series[1].name, type: 'bar', data: monthlyData.series[1].data },
+                            { name: monthlyData.series[2].name, type: 'line', data: monthlyData.series[2].data }
+                        ],
+                        xaxis: { categories: monthlyData.categories }
+                    });
                 } else if (monthlyData) {
                     initMonthlyChart(monthlyData);
                 }
 
-                // UPDATE CHART 2 (Cumulative)
+                // --- UPDATE CHART 2 (Cumulative) ---
                 if (chartInstance2) {
                     chartInstance2.updateSeries(cumulativeData.series); 
                     chartInstance2.updateOptions({ xaxis: { categories: cumulativeData.categories } });
